@@ -131,8 +131,8 @@ class KNearestNeighbor(object):
         #########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         # 将(a-b)^2转化为a^2+b^2-2*a*b，并将其向量化
-        a = np.sum(X ** 2, axis=1).reshape(-1, 1)
-        b = np.sum(self.X_train ** 2, axis=1).reshape(1, -1)
+        a = np.sum(X ** 2, axis=1).reshape((-1, 1))
+        b = np.sum(self.X_train ** 2, axis=1).reshape((1, -1))
         dists = np.sqrt((a + b - 2 * (X.dot(self.X_train.T))))
         pass
 

@@ -79,7 +79,9 @@ class TwoLayerNet(object):
         # shape (N, C).                                                             #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        ReLU = lambda x : np.clip(x, 0, None)
+        H = ReLU(X.dot(W1) + b1)
+        scores = H.dot(W2) + b2
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -97,7 +99,9 @@ class TwoLayerNet(object):
         # classifier loss.                                                          #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        exp_sum = np.sum(np.exp(scores), axis=1).reshape(-1, 1)
+        loss = np.sum(-scores[range(N), y].reshape(-1, 1) + np.log(exp_sum))
+        loss = loss / N + reg * np.sum(W1 ** 2) + reg * np.sum(W2 ** 2)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -110,7 +114,16 @@ class TwoLayerNet(object):
         # grads['W1'] should store the gradient on W1, and be a matrix of same size #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        ret_2 = np.exp(scores) / exp_sum # (N*C)
+        ret_2[range(N), y] -= 1
+        grads['W2'] = H.T.dot(ret_2) / N + 2 * reg * W2
+        grads['b2'] = np.sum(ret_2, axis=0) / N
 
+        grads_H = ret_2.dot(W2.T)
+        indices = np.where(X.dot(W1) + b1 < 0)
+        grads_H[indices] = 0
+        grads['W1'] = X.T.dot(grads_H) / N + 2 * reg * W1
+        grads['b1'] = np.sum(grads_H, axis=0) / N
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -155,7 +168,9 @@ class TwoLayerNet(object):
             # them in X_batch and y_batch respectively.                             #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+            indices = np.random.choice(range(num_train), batch_size, replace=num_train < batch_size)
+            X_batch = X[indices]
+            y_batch = y[indices]
             pass
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -171,7 +186,10 @@ class TwoLayerNet(object):
             # stored in the grads dictionary defined above.                         #
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+            self.params['W1'] -= learning_rate * grads['W1']
+            self.params['b1'] -= learning_rate * grads['b1']
+            self.params['W2'] -= learning_rate * grads['W2']
+            self.params['b2'] -= learning_rate * grads['b2']
             pass
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -212,12 +230,15 @@ class TwoLayerNet(object):
           to have class c, where 0 <= c < C.
         """
         y_pred = None
-
         ###########################################################################
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        ReLU = lambda x : np.clip(x, 0, None)
+        H = ReLU(X.dot(W1) + b1)
+        y_pred = np.argmax(H.dot(W2) + b2, axis=1)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****

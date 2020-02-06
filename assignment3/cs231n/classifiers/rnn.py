@@ -141,7 +141,20 @@ class CaptioningRNN(object):
         # in your implementation, if needed.                                       #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        initial_state = features.dot(W_proj) + b_proj
+        caption_vecs, cache_embedding = word_embedding_forward(captions_in, W_embed)
+        if self.cell_type == 'rnn':
+            hidden_states, cache_rnn = rnn_forward(caption_vecs, initial_state, Wx, Wh, b)
+        else:
+            pass
+        scores, cache_affine = temporal_affine_forward(hidden_states, W_vocab, b_vocab)
+        loss, d_scores = temporal_softmax_loss(scores, captions_out, mask)
 
+        d_states, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(d_scores, cache_affine)
+        d_embedding, d_initial_states, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(d_states, cache_rnn)
+        grads['W_embed'] = word_embedding_backward(d_embedding, cache_embedding)
+        grads['W_proj'] = features.T.dot(d_initial_states)
+        grads['b_proj'] = np.sum(d_initial_states, axis=0)
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
@@ -210,7 +223,17 @@ class CaptioningRNN(object):
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+        state = features.dot(W_proj) + b_proj
+        word = [self._start] * N
+        for i in range(max_length):
+            word, _ = word_embedding_forward(word, W_embed)
+            if self.cell_type == 'rnn':
+                state, _ = rnn_step_forward(word, state, Wx, Wh, b)
+            else:
+                pass
+            scores = state.dot(W_vocab) + b_vocab
+            word = np.argmax(scores, axis=1)
+            captions[:, i] = word
         pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
